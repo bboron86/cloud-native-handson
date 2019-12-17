@@ -168,6 +168,18 @@ _validate the changes using `kubectl port-forward` command
 Not every bug in your code can be traced by adding `log.debug()` statements. Attaching a debugger to your running code 
 can sometimes magically help you to see what’s wrong with your code.
 
+_update `configmap.yaml` to automatically apply all key values from `values.yaml`
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.container.name }}-config
+data:
+data:
+  {{- toYaml .Values.data }}
+```
+
 _update `deployment.yaml` (replace the `env` part) to enable dynamic load of all config-map variables:
 
 ```yaml
@@ -176,10 +188,12 @@ envFrom:
     name: {{ .Values.container.name }}-config
 ```
 
-_add `JAVA_TOOL_OPTIONS` env variable (in the `ConfigMap`) to allow remote debugging on port `5005`:
+_add `GREETING` & `JAVA_TOOL_OPTIONS` env variable (in the `values.yaml`) to allow remote debugging on port `5005`:
 
 ```yaml
-JAVA_TOOL_OPTIONS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+data:
+  GREETING: hola
+  JAVA_TOOL_OPTIONS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
 ```
 
 _extend `Dockerfile` to expose port `5005`
