@@ -176,8 +176,7 @@ kind: ConfigMap
 metadata:
   name: {{ .Values.container.name }}-config
 data:
-data:
-  {{- toYaml .Values.data }}
+  {{- toYaml .Values.data | nindent 2 }}
 ```
 
 _update `deployment.yaml` (replace the `env` part) to enable dynamic load of all config-map variables:
