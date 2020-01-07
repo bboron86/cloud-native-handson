@@ -145,12 +145,9 @@ data:
 _update `deployment.yaml` template by adding config-map reference (underneath `container`):
 
 ```yaml
-env:
-- name: GREETING
-  valueFrom:
-      configMapKeyRef:
-          name: {{ .Values.container.name }}-config
-          key: greeting-key
+envFrom:
+- configMapRef:
+    name: {{ .Values.container.name }}-config
 ```
 
 _update `HelloController.java` to return the env variable `GREETING`:
@@ -168,7 +165,7 @@ _validate the changes using `kubectl port-forward` command
 
 ## step 5
 
-Not every bug in your code can be traced by adding `log.debug()` statements. Attaching a debugger to your running code 
+Not every bug in your code can be traced by adding `log.debug()` statements. Attaching a debugger to your running code
 can sometimes magically help you to see what’s wrong with your code.
 
 _update `configmap.yaml` to automatically apply all key values from `values.yaml`
@@ -180,14 +177,6 @@ metadata:
   name: {{ .Values.container.name }}-config
 data:
   {{- toYaml .Values.data | nindent 2 }}
-```
-
-_update `deployment.yaml` (replace the `env` part) to enable dynamic load of all config-map variables:
-
-```yaml
-envFrom:
-- configMapRef:
-    name: {{ .Values.container.name }}-config
 ```
 
 _add `GREETING` & `JAVA_TOOL_OPTIONS` env variable (in the `values.yaml`) to allow remote debugging on port `5005`:
@@ -239,9 +228,3 @@ TODO BB:
   - add service
   - add readiness-probe on /actuator/health
   - port-forward on service showing value 1,1,1,2,2,2,2
-
-- get rid off the env-by-config-map-key
-
-- update other steps:
-  - merge down
-  - adjusting naming
