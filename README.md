@@ -2,22 +2,25 @@
 
 ## step 1
 
-Build a `docker` image to containerize your java application (`build/libs/cn-worskshop.jar`). 
-Run it locally for testing:
+Build a `docker` image to containerize your java application (`build/libs/cn-worskshop.jar`).
+
+_Run it locally for testing:
 
     docker run --rm -it -p 8080:8080 cn-workshop1/greeting-service-X:v1
 
-Push it into DockerHub using following user (`docker login docker.io`):
-    
-    username: cnworkshop1
-    password: cnworkshop1
+_Push it into DockerHub using following user (`docker login docker.io`):
+
+    username: <REGISTRY_USER>
+    password: <REGISTRY_PWD>
 
 ## step 2
 
-To use the full power of Kubernetes as a declarative infrastructure as code system, you can submit YAML manifests to the 
-cluster yourself, using `kubectl` commands. Adjust following `deployment` configuration:
+To use the full power of Kubernetes as a declarative infrastructure as code system, you can submit YAML manifests to the
+cluster yourself, using `kubectl` commands. 
 
-````yaml
+_Adjust following `deployment` configuration:
+
+```yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -36,10 +39,10 @@ spec:
     spec:
       containers:
         - name: demo
-          image: cn-workshop1/demo:latest
+          image: <REGISTRY_USER>/demo:latest
           ports:
           - containerPort: 8888
-````
+```
 
 Apply it to the cluster in your namespace:
 
@@ -100,7 +103,7 @@ demo-helm/values.yaml
 container:
   name: demo
   port: 8888
-  image: cnworkshop1/demo
+  image: <REGISTRY_USER>/demo
   tag: latest
 replicas: 1
 ```
@@ -210,7 +213,7 @@ _add `Tiltfile` at repo's root:
 
 ```yaml
 # docker tag, build context
-docker_build('cnworkshop1/demo', '.')
+docker_build('<REGISTRY_USER>/demo', '.')
 # path to helm chart
 k8s_yaml(helm('demo-helm'))
 # port-forward on 'cn-workshop' resource
@@ -222,3 +225,23 @@ allow_k8s_contexts('gke_hypnotic-surge-215419_europe-west1-b_cn-workshop')
 _adjust helm's `values.yaml` file updating `container.image` value with repository prefix
 
 _use `tilt up` to start the development mode
+
+
+
+
+
+
+
+
+TODO BB:
+
+- add readiness-step:
+  - add service
+  - add readiness-probe on /actuator/health
+  - port-forward on service showing value 1,1,1,2,2,2,2
+
+- get rid off the env-by-config-map-key
+
+- update other steps:
+  - merge down
+  - adjusting naming
