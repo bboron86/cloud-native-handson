@@ -42,6 +42,18 @@ spec:
           image: <REGISTRY_USER>/demo:latest
           ports:
           - containerPort: 8888
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo
+spec:
+  selector:
+    app: demo
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8888
 ```
 
 Apply it to the cluster in your namespace:
@@ -49,9 +61,9 @@ Apply it to the cluster in your namespace:
     kubectl create namespace <namespace-name>
     kubectl create -f <deployment-yaml-file> -n <namespace-name>
 
-Connect the `pod` to a port on your local machine, so that you can call it with your browser or curl command:
+Connect the `service` to a port on your local machine, so that you can call it with your browser or curl command:
 
-    kubectl port-forward <pod-name> <kubernetes-port>:<local-port> -n <namespace-name>
+    kubectl port-forward <service-name> 80:<local-port> -n <namespace-name>
     curl localhost:<local-port>/hello
 
 ## step 3
@@ -86,6 +98,21 @@ spec:
           image: {{ .Values.container.image }}:{{ .Values.container.tag }}
           ports:
               - containerPort: {{ .Values.container.port }}
+```
+
+demo-helm/templates/service.yaml
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.container.name }}-svc
+spec:
+  selector:
+    app: {{ .Values.container.name }}
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: {{ .Values.container.port }}
 ```
 
 demo-helm/Chart.yaml
@@ -196,6 +223,38 @@ _forward the pod's port `5005` into your local machine and attach your IDE's rem
 
 ## step 6
 
+Sometimes, applications are temporarily unable to serve traffic. For example, an application might need to load large data or configuration
+files during startup, or depend on external services after startup. In such cases, you don’t want to kill the application, but you don’t
+want to send it requests either. Kubernetes provides readiness probes to detect and mitigate these situations. A pod with containers
+reporting that they are not ready does not receive traffic through Kubernetes Services.
+
+_update deployment template (`demo-helm/templates/deployment.yaml`) adding following configuration on `ports` level
+
+```yaml
+livenessProbe:
+  httpGet:
+    path: /actuator/health
+    port: {{ .Values.container.port }}
+  initialDelaySeconds: 30
+```
+
+_update GREETING value in order to see changes while executing `curl` command
+
+```yaml
+data:
+  GREETING: hola & hello
+  ...
+```
+
+_upgrade the helm release (`helm3 upgrade ...`) and verify via `kubectl portforward` that the result of `curl` command changes after approx. 30s:
+
+    curl localhost:<local-port>/hello
+    curl localhost:<local-port>/hello
+    curl localhost:<local-port>/hello
+    ...
+
+## step 7
+
 _install `Tilt` from https://docs.tilt.dev/install.html
 
 _add `Tiltfile` at repo's root:
@@ -214,17 +273,3 @@ allow_k8s_contexts('gke_hypnotic-surge-215419_europe-west1-b_cn-workshop')
 _adjust helm's `values.yaml` file updating `container.image` value with repository prefix
 
 _use `tilt up` to start the development mode
-
-
-
-
-
-
-
-
-TODO BB:
-
-- add readiness-step:
-  - add service
-  - add readiness-probe on /actuator/health
-  - port-forward on service showing value 1,1,1,2,2,2,2
